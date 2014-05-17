@@ -28,6 +28,13 @@ def parse_command_line():
         help='path to get-pip.py (by default, will download from www.python.org)',
         metavar='FILE',
     )
+
+    parser.add_option(
+        '-p', '--install-package', dest='packages', default=[],
+        help='install python package',
+        metavar='PACKAGE',
+        action='append',
+    )
     
     return parser.parse_args()
 
@@ -72,11 +79,11 @@ def find_exe(filename):
             return path
     return None
 
-def find_python_path():
-    return find_exe('python.exe')
-
 def is_python_installed():
-    return find_python_path() != None
+    return find_exe('python.exe') != None
+
+def is_pip_installed():
+    return find_exe('pip.exe') != None
 
 def append_to_system_path(directory):
     key = _winreg.OpenKey(
@@ -117,6 +124,7 @@ if options.force_install or not is_python_installed():
         print 'Installation failed!'
         sys.exit(1)
 
+if options.force_install or  not is_pip_installed():
     pip_install_path = None
 
     if options.pip_install_path:
@@ -131,5 +139,9 @@ if options.force_install or not is_python_installed():
 
     print 'Adding pip to the system PATH ...'
     append_to_system_path(os.path.join(get_system_drive(), r'Python27\Scripts'))
+
+for package in options.packages:
+    print 'Installing package ' + package + ' ...'
+    os.system('pip install ' + package)
 
 print 'Success!'

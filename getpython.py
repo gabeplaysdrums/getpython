@@ -31,6 +31,7 @@ msi_done_path = msi_path + '.download'
 
 if not os.path.exists(msi_path) or not os.path.exists(msi_done_path):
     print 'Downloading Python 2.7.6 installer ...'
-    os.remove(msi_done_path)
+    if os.path.exists(msi_done_path):
+        os.remove(msi_done_path)
     download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
     open(msi_done_path, 'w').close()

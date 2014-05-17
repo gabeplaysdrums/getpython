@@ -16,6 +16,12 @@ def parse_command_line():
         help='force installation, even if Python is already on the system',
         action='store_true',
     )
+
+    parser.add_option(
+        '--msi-path', dest='msi_path', default=None,
+        help='path to python installer MSI (by default, will download from www.python.org)',
+        metavar='FILE',
+    )
     
     return parser.parse_args()
 
@@ -74,15 +80,20 @@ def get_system_drive():
     return os.path.splitdrive(cmd_path)[0]
 
 if options.force_install or not check_install():
-    msi_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
-    msi_done_path = msi_path + '.download'
+    msi_path = None
     
-    if not os.path.exists(msi_path) or not os.path.exists(msi_done_path):
-        print 'Downloading Python 2.7.6 installer ...'
-        if os.path.exists(msi_done_path):
-            os.remove(msi_done_path)
-        download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
-        open(msi_done_path, 'w').close()
+    if options.msi_path:
+        msi_path = options.msi_path
+    else:
+        msi_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
+        msi_done_path = msi_path + '.download'
+        
+        if not os.path.exists(msi_path) or not os.path.exists(msi_done_path):
+            print 'Downloading Python 2.7.6 installer ...'
+            if os.path.exists(msi_done_path):
+                os.remove(msi_done_path)
+            download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
+            open(msi_done_path, 'w').close()
     
     print 'Installing Python ...'
     os.system(msi_path + ' /quiet /norestart')

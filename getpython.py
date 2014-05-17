@@ -84,15 +84,18 @@ def append_to_system_path(directory):
         r'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 
         0, _winreg.KEY_ALL_ACCESS,
     )
+    path = _winreg.QueryValueEx(key, 'Path')[0]
+    paths = set(path.split(';'))
+    paths.add(directory)
+    path = ';'.join(paths)
     _winreg.SetValueEx(
-        key, 'Path', 0, _winreg.REG_EXPAND_SZ, 
-        os.environ['PATH'] + ';' + directory,
+        key, 'Path', 0, _winreg.REG_EXPAND_SZ, path,
     )
     os.environ['PATH'] += ';' + directory
 
 def get_system_drive():
     cmd_path = find_exe('cmd.exe')
-    return os.path.splitdrive(cmd_path)[0]
+    return os.path.splitdrive(cmd_path)[0] + '\\'
 
 if options.force_install or not is_python_installed():
     msi_path = None

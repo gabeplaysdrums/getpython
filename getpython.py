@@ -34,7 +34,15 @@ def parse_command_line():
 (options, args) = parse_command_line()
 
 def download(url, dest):
+    done_path = dest + '.download'
+
+    if os.path.exists(dest) and os.path.exists(done_path):
+        return
+
     with open(dest, 'wb') as msifile:
+        if os.path.exists(done_path):
+            os.remove(done_path)
+
         response = urllib2.urlopen(url)
         total_size = int(response.info().getheader('Content-Length').strip())
         byte_count = 0
@@ -55,6 +63,7 @@ def download(url, dest):
     
         sys.stdout.write('\n')
         response.close()
+        open(done_path, 'w').close()
 
 def find_exe(filename):
     for d in os.environ['PATH'].split(';'):
@@ -92,14 +101,8 @@ if options.force_install or not is_python_installed():
         msi_path = options.msi_path
     else:
         msi_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
-        msi_done_path = msi_path + '.download'
-        
-        if not os.path.exists(msi_path) or not os.path.exists(msi_done_path):
-            print 'Downloading Python 2.7.6 installer ...'
-            if os.path.exists(msi_done_path):
-                os.remove(msi_done_path)
-            download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
-            open(msi_done_path, 'w').close()
+        print 'Downloading Python 2.7.6 installer ...'
+        download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
     
     print 'Installing Python ...'
     os.system(msi_path + ' /quiet /norestart')
@@ -117,9 +120,8 @@ if options.force_install or not is_python_installed():
         pip_install_path = options.pip_install_path
     else:
         pip_install_path = os.path.join(tempfile.gettempdir(), 'get-pip.py')
-        if not os.path.exists(pip_install_path):
-            print 'Downloading pip install script ...'
-            download('https://bootstrap.pypa.io/get-pip.py', pip_install_path)
+        print 'Downloading pip install script ...'
+        download('https://bootstrap.pypa.io/get-pip.py', pip_install_path)
 
     print 'Installing pip ...'
     os.system('python ' + pip_install_path)

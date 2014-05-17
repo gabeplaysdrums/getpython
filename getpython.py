@@ -1,8 +1,25 @@
+from optparse import OptionParser
+import _winreg
 import os
 import sys
 import tempfile
 import urllib2
-import _winreg
+
+def parse_command_line():
+
+    parser = OptionParser(
+        usage = '%prog [options]'
+    )
+    
+    parser.add_option(
+        '-f', '--force-install', dest='force_install', default=False,
+        help='force installation, even if Python is already on the system',
+        action='store_true',
+    )
+    
+    return parser.parse_args()
+
+(options, args) = parse_command_line()
 
 def download(url, dest):
     with open(dest, 'wb') as msifile:
@@ -56,9 +73,7 @@ def get_system_drive():
     cmd_path = find_exe('cmd.exe')
     return os.path.splitdrive(cmd_path)[0]
 
-force_install = True
-
-if force_install or not check_install():
+if options.force_install or not check_install():
     msi_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
     msi_done_path = msi_path + '.download'
     

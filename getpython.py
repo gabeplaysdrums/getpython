@@ -60,7 +60,7 @@ def find_exe(filename):
 def find_python_path():
     return find_exe('python.exe')
 
-def check_install():
+def is_python_installed():
     return find_python_path() != None
 
 def append_to_system_path(directory):
@@ -79,7 +79,7 @@ def get_system_drive():
     cmd_path = find_exe('cmd.exe')
     return os.path.splitdrive(cmd_path)[0]
 
-if options.force_install or not check_install():
+if options.force_install or not is_python_installed():
     msi_path = None
     
     if options.msi_path:
@@ -101,6 +101,17 @@ if options.force_install or not check_install():
     print 'Appending Python to the system PATH ...'
     append_to_system_path(os.path.join(get_system_drive(), 'Python27'))
 
-    if not check_install():
+    if not is_python_installed():
         print 'Installation failed!'
         sys.exit(1)
+
+    pip_install_path = os.path.join(tempfile.gettempdir(), 'get-pip.py')
+
+    if not os.path.exists(pip_install_path):
+        print 'Downloading pip install script ...'
+        download('https://bootstrap.pypa.io/get-pip.py', pip_install_path)
+
+    print 'Installing pip ...'
+    os.system('python ' + pip_install_path)
+
+print 'Success!'

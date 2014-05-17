@@ -22,6 +22,12 @@ def parse_command_line():
         help='path to python installer MSI (by default, will download from www.python.org)',
         metavar='FILE',
     )
+
+    parser.add_option(
+        '--pip-path', dest='pip_install_path', default=None,
+        help='path to get-pip.py (by default, will download from www.python.org)',
+        metavar='FILE',
+    )
     
     return parser.parse_args()
 
@@ -105,13 +111,20 @@ if options.force_install or not is_python_installed():
         print 'Installation failed!'
         sys.exit(1)
 
-    pip_install_path = os.path.join(tempfile.gettempdir(), 'get-pip.py')
+    pip_install_path = None
 
-    if not os.path.exists(pip_install_path):
-        print 'Downloading pip install script ...'
-        download('https://bootstrap.pypa.io/get-pip.py', pip_install_path)
+    if options.pip_install_path:
+        pip_install_path = options.pip_install_path
+    else:
+        pip_install_path = os.path.join(tempfile.gettempdir(), 'get-pip.py')
+        if not os.path.exists(pip_install_path):
+            print 'Downloading pip install script ...'
+            download('https://bootstrap.pypa.io/get-pip.py', pip_install_path)
 
     print 'Installing pip ...'
     os.system('python ' + pip_install_path)
+
+    print 'Adding pip to the system PATH ...'
+    append_to_system_path(os.path.join(get_system_drive(), r'Python27\Scripts'))
 
 print 'Success!'

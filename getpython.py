@@ -98,7 +98,6 @@ def append_to_system_path(directory):
     _winreg.SetValueEx(
         key, 'Path', 0, _winreg.REG_EXPAND_SZ, path,
     )
-    os.environ['PATH'] += ';' + directory
 
 def get_system_drive():
     cmd_path = find_exe('cmd.exe')
@@ -111,7 +110,7 @@ if options.force_install or not is_python_installed():
         msi_path = options.msi_path
     else:
         msi_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
-        print 'Downloading Python 2.7.6 installer ...'
+        print 'Downloading Python installer ...'
         download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
     
     print 'Installing Python ...'
@@ -124,7 +123,7 @@ if options.force_install or not is_python_installed():
         print 'Installation failed!'
         sys.exit(1)
 
-if options.force_install or  not is_pip_installed():
+if options.force_install or not is_pip_installed():
     pip_install_path = None
 
     if options.pip_install_path:

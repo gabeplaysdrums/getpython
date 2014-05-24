@@ -1,9 +1,10 @@
 getpython
 =========
 
-An application --- written in Python --- that installs Python on a Windows machine that doesn't have Python.  Yes, you read that correctly.
+An application -- written in Python -- that installs Python on a Windows machine that doesn't have Python.  Yes, you read that correctly.
 
 It takes care of:
+
     * downloading the correct Python 2.7 installer from [python.org](http://python.org)
     * installing Python in unattended mode
     * downloading and installing [pip](http://www.pip-installer.org/) package manager

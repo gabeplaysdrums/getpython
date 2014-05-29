@@ -4,6 +4,8 @@ import os
 import sys
 import tempfile
 import urllib2
+import zipfile
+import distutils.dir_util
 
 def parse_command_line():
 
@@ -18,14 +20,14 @@ def parse_command_line():
     )
 
     parser.add_option(
-        '--msi-path', dest='msi_path', default=None,
+        '--python-installer-path', dest='python_installer_path', default=None,
         help='path to python installer MSI (by default, will download from www.python.org)',
         metavar='FILE',
     )
 
     parser.add_option(
-        '--pip-path', dest='pip_install_path', default=None,
-        help='path to get-pip.py (by default, will download from www.python.org)',
+        '--pip-installer-path', dest='pip_installer_path', default=None,
+        help='path to get-pip.py (by default, will download from https://pypi.python.org/pypi/pip/)',
         metavar='FILE',
     )
 
@@ -34,6 +36,18 @@ def parse_command_line():
         help='install python package',
         metavar='PACKAGE',
         action='append',
+    )
+
+    parser.add_option(
+        '--install-pywin32', dest='install_pywin32', default=False,
+        help='install pywin32 libraries',
+        action='store_true',
+    )
+
+    parser.add_option(
+        '--pywin32-installer-path', dest='pywin32_installer_path', default=None,
+        help='path to pywin32 installer (by default, will download from http://sourceforge.net/projects/pywin32)',
+        metavar='FILE',
     )
     
     return parser.parse_args()
@@ -85,6 +99,14 @@ def is_python_installed():
 def is_pip_installed():
     return find_exe('pip.exe') != None
 
+def is_pywin32_installed():
+    try:
+        import pywintypes
+        return True
+    except ImportError:
+        pass
+    return False
+
 def append_to_system_path(directory):
     key = _winreg.OpenKey(
         _winreg.HKEY_LOCAL_MACHINE, 
@@ -103,18 +125,45 @@ def get_system_drive():
     cmd_path = find_exe('cmd.exe')
     return os.path.splitdrive(cmd_path)[0] + '\\'
 
+def install_pywin32(pywin32_installer_path):
+    """
+    Manual silent install of pywin32
+    (source: http://forums.arcgis.com/threads/33808-PyWin32-212.win32-py2.6-silent-install)
+
+    """
+
+    print 'Extracting pywin32 installer ...'
+    extract_root = os.path.join(tempfile.gettempdir(), 'pywin32')
+
+    if not os.path.exists(extract_root):
+        os.makedirs(extract_root)
+
+    z = zipfile.ZipFile(pywin32_installer_path)
+    for f in z.namelist():
+        if f.endswith('/'):
+            os.makedirs(os.path.join(extract_root, f))
+    z.extractall(extract_root)
+
+    print 'Installing pywin32 ...'
+    packages_root = os.path.join(get_system_drive(), r'Python27\Lib\site-packages')
+    distutils.dir_util.copy_tree(os.path.join(extract_root, 'PLATLIB'), packages_root)
+
+    os.system('python %s -install -silent' % (
+        os.path.join(extract_root, r'SCRIPTS\pywin32_postinstall.py'),
+    ))
+
 if options.force_install or not is_python_installed():
-    msi_path = None
+    python_installer_path = None
     
-    if options.msi_path:
-        msi_path = options.msi_path
+    if options.python_installer_path:
+        python_installer_path = options.python_installer_path
     else:
-        msi_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
+        python_installer_path = os.path.join(tempfile.gettempdir(), 'python-2.7.6.msi')
         print 'Downloading Python installer ...'
-        download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', msi_path)
+        download('https://www.python.org/ftp/python/2.7.6/python-2.7.6.msi', python_installer_path)
     
     print 'Installing Python ...'
-    os.system(msi_path + ' /quiet /norestart')
+    os.system(python_installer_path + ' /quiet /norestart')
 
     print 'Appending Python to the system PATH ...'
     append_to_system_path(os.path.join(get_system_drive(), 'Python27'))
@@ -124,23 +173,38 @@ if options.force_install or not is_python_installed():
         sys.exit(1)
 
 if options.force_install or not is_pip_installed():
-    pip_install_path = None
+    pip_installer_path = None
 
-    if options.pip_install_path:
-        pip_install_path = options.pip_install_path
+    if options.pip_installer_path:
+        pip_installer_path = options.pip_installer_path
     else:
-        pip_install_path = os.path.join(tempfile.gettempdir(), 'get-pip.py')
+        pip_installer_path = os.path.join(tempfile.gettempdir(), 'get-pip.py')
         print 'Downloading pip install script ...'
-        download('https://bootstrap.pypa.io/get-pip.py', pip_install_path)
+        download('https://bootstrap.pypa.io/get-pip.py', pip_installer_path)
 
     print 'Installing pip ...'
-    os.system('python ' + pip_install_path)
+    os.system('python ' + pip_installer_path)
 
     print 'Adding pip to the system PATH ...'
     append_to_system_path(os.path.join(get_system_drive(), r'Python27\Scripts'))
 
-for package in options.packages:
-    print 'Installing package ' + package + ' ...'
-    os.system('pip install ' + package)
+if options.install_pywin32 and (options.force_install or not is_pywin32_installed()):
+    pywin32_installer_path = None
+
+    if options.pywin32_installer_path:
+        pywin32_installer_path = options.pywin32_installer_path
+    else:
+        pywin32_installer_path = os.path.join(tempfile.gettempdir(), 'pywin32-219.win32-py2.7.exe')
+        print 'Downloading pywin32 installer ...'
+        download(
+            'http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild%2520219%2F&ts=1401331200&use_mirror=iweb', 
+            pywin32_installer_path
+        )
+
+    install_pywin32(pywin32_installer_path)
+
+if options.packages:
+    print 'Installing packages ...'
+    os.system('pip install ' + ' '.join(options.packages))
 
 print 'Success!'

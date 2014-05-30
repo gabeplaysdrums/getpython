@@ -14,7 +14,7 @@ It takes care of:
 Example Usage
 -------------
     Install Python, pip, pywin32, django, and south:
-    getpython.exe -p pywin32 -p django -p south
+    getpython.exe --install-pywin32 -p django -p south
     
     Show usage:
     getpython.exe -h

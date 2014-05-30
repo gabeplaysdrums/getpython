@@ -6,6 +6,7 @@ import tempfile
 import urllib2
 import zipfile
 import distutils.dir_util
+import pkgutil
 
 def parse_command_line():
 
@@ -100,12 +101,8 @@ def is_pip_installed():
     return find_exe('pip.exe') != None
 
 def is_pywin32_installed():
-    try:
-        import pywintypes
-        return True
-    except ImportError:
-        pass
-    return False
+    mod_path = os.path.join(get_system_drive(), r'Python27\Lib\site-packages\win32\lib\pywintypes.py')
+    return os.path.exists(mod_path)
 
 def append_to_system_path(directory):
     key = _winreg.OpenKey(
@@ -120,6 +117,7 @@ def append_to_system_path(directory):
     _winreg.SetValueEx(
         key, 'Path', 0, _winreg.REG_EXPAND_SZ, path,
     )
+    os.environ['PATH'] += ';' + directory
 
 def get_system_drive():
     cmd_path = find_exe('cmd.exe')

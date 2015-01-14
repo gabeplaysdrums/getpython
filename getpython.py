@@ -120,6 +120,8 @@ def append_to_system_path(directory):
     _winreg.SetValueEx(
         key, 'Path', 0, _winreg.REG_EXPAND_SZ, path,
     )
+    os.system('setx PATH "%s" 1>NUL 2>&1' % (path,))
+    print 'Appended to PATH:', directory
 
 def get_system_drive():
     cmd_path = find_exe('cmd.exe')
